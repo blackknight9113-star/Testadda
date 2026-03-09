@@ -1,0 +1,243 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Portal - Dark Mode Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Tailwind Configuration for Dark Mode
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        /* Light Mode Styles */
+        .status-unvisited { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .status-not-answered { background-color: #ef4444; color: white; border: none; }
+        .status-answered { background-color: #22c55e; color: white; border: none; }
+        .status-review { background-color: #8b5cf6; color: white; border: none; }
+        
+        /* Dark Mode Specific Adjustments */
+        .dark .bg-white { background-color: #1f2937 !important; color: #f3f4f6; }
+        .dark .bg-gray-100 { background-color: #111827 !important; }
+        .dark .text-gray-700 { color: #d1d5db; }
+        .dark .border-gray-100 { border-color: #374151; }
+        .dark .status-unvisited { background-color: #374151; color: #d1d5db; border-color: #4b5563; }
+
+        #palette-sidebar { transition: 0.4s ease; transform: translateX(100%); z-index: 50; }
+        #palette-sidebar.open { transform: translateX(0); }
+        .hidden-view { display: none !important; }
+
+        @keyframes blinker { 50% { opacity: 0.3; } }
+        .timer-red-alert { color: #ef4444 !important; animation: blinker 1s linear infinite; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans transition-colors duration-300">
+
+    <script src="questions.js"></script>
+
+    <button onclick="toggleTheme()" class="fixed bottom-6 left-6 z-[60] bg-blue-800 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all border-2 border-white">
+        <span id="theme-icon">🌙</span>
+    </button>
+
+    <div id="file-error-screen" class="hidden fixed inset-0 bg-red-50 dark:bg-red-900 z-[100] flex items-center justify-center p-6 text-center">
+        <div class="max-w-md bg-white p-8 rounded-3xl shadow-2xl border-4 border-red-500">
+            <h2 class="text-2xl font-black text-red-600 mb-2">FILE MISSING!</h2>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">Aapki <code class="text-red-500">questions.js</code> file nahi mili.</p>
+            <button onclick="location.reload()" class="bg-red-500 text-white px-8 py-3 rounded-xl font-bold">RETRY</button>
+        </div>
+    </div>
+
+    <div id="setup-screen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full border-t-8 border-blue-800 dark:border-blue-500">
+            <h1 class="text-2xl font-black text-blue-900 dark:text-blue-400 text-center mb-6 italic underline">QUIZ SETUP</h1>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase">Subject</label>
+                    <select id="select-subject" onchange="updateTopics()" class="w-full p-3 border-2 rounded-lg mt-1 font-bold bg-gray-50 dark:bg-gray-700 dark:border-gray-600"></select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase">Topic</label>
+                    <select id="select-topic" class="w-full p-3 border-2 rounded-lg mt-1 font-semibold bg-gray-50 dark:bg-gray-700 dark:border-gray-600"></select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase">Time</label>
+                    <select id="select-time" class="w-full p-3 border-2 rounded-lg mt-1 font-bold bg-blue-50 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                        <option value="60">1 Minute (Test)</option>
+                        <option value="1200" selected>20 Minutes</option>
+                        <option value="3600">60 Minutes</option>
+                    </select>
+                </div>
+                <button onclick="startTest()" class="w-full bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-blue-800">START TEST</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="quiz-area" class="hidden-view">
+        <header class="bg-blue-800 dark:bg-blue-950 text-white px-4 py-3 flex justify-between items-center shadow-md">
+            <h1 class="font-bold text-xs uppercase">Practice Portal</h1>
+            <div class="flex items-center gap-3">
+                <div id="timer" class="bg-blue-900 px-4 py-1 rounded font-mono text-xl border-2 border-blue-400 transition-all">00:00</div>
+                <button onclick="togglePalette()" class="bg-yellow-400 text-blue-900 px-3 py-1 rounded font-bold text-xs">PALETTE</button>
+            </div>
+        </header>
+
+        <main class="flex h-[calc(100vh-64px)] overflow-hidden relative">
+            <div class="flex-1 flex flex-col bg-white">
+                <div id="quiz-container" class="p-6 md:p-12 overflow-y-auto flex-1 dark:bg-gray-800">
+                    <div class="flex justify-between items-center border-b dark:border-gray-700 pb-2 mb-6">
+                        <h2 id="q-number" class="text-xl font-black text-blue-800 dark:text-blue-400 italic">Q1</h2>
+                        <span id="q-meta" class="text-[10px] font-bold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-2 py-1 rounded"></span>
+                    </div>
+                    <p id="q-text" class="text-lg md:text-xl font-medium mb-8 whitespace-pre-wrap dark:text-gray-100"></p>
+                    <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+                <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-between">
+                    <button onclick="markReview()" class="text-purple-700 dark:text-purple-400 font-bold px-4 py-2">Review</button>
+                    <div class="flex gap-2">
+                        <button onclick="prevQ()" class="bg-gray-200 dark:bg-gray-700 dark:text-white px-5 py-2 rounded font-bold">PREV</button>
+                        <button onclick="saveNext()" class="bg-green-600 text-white px-8 py-2 rounded font-bold">SAVE & NEXT</button>
+                    </div>
+                </div>
+            </div>
+
+            <aside id="palette-sidebar" class="fixed right-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-800 shadow-2xl p-6 flex flex-col border-l dark:border-gray-700">
+                <h3 class="font-black text-gray-500 mb-6 uppercase text-sm">Question Palette</h3>
+                <div id="palette-grid" class="grid grid-cols-4 gap-3 overflow-y-auto"></div>
+                <button onclick="submitQuiz()" class="mt-auto bg-red-600 text-white py-4 rounded-xl font-bold">SUBMIT</button>
+            </aside>
+        </main>
+    </div>
+
+    <div id="analysis-view" class="hidden-view p-6 bg-white dark:bg-gray-900 min-h-screen overflow-y-auto">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-8 border-b-4 border-blue-900 pb-2">
+                <h2 class="text-3xl font-black text-blue-900 dark:text-blue-400">ANALYSIS</h2>
+                <button onclick="resetQuiz()" class="bg-blue-700 text-white px-6 py-2 rounded-lg font-bold">NEW TEST</button>
+            </div>
+            <div id="review-list" class="space-y-6"></div>
+        </div>
+    </div>
+
+    <script>
+        let testQs = []; let curIdx = 0; let userAns = []; let timerSec = 0; let clock;
+
+        // Theme Toggle Function
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const icon = document.getElementById('theme-icon');
+            icon.innerText = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        }
+
+        // Check for saved theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-icon').innerText = '☀️';
+        }
+
+        function initSetup() {
+            if (typeof questionBank === 'undefined') {
+                document.getElementById('file-error-screen').classList.remove('hidden');
+                document.getElementById('setup-screen').classList.add('hidden-view');
+                return;
+            }
+            const subSel = document.getElementById('select-subject');
+            const subs = [...new Set(questionBank.map(q => q.sub))];
+            subSel.innerHTML = '<option value="all">All Subjects</option>';
+            subs.forEach(s => subSel.innerHTML += `<option value="${s}">${s}</option>`);
+            updateTopics();
+        }
+
+        function updateTopics() {
+            const sub = document.getElementById('select-subject').value;
+            const topSel = document.getElementById('select-topic');
+            const tops = [...new Set(questionBank.filter(q => sub === 'all' || q.sub === sub).map(q => q.topic))];
+            topSel.innerHTML = '<option value="all">All Topics</option>';
+            tops.forEach(t => topSel.innerHTML += `<option value="${t}">${t}</option>`);
+        }
+
+        function startTest() {
+            timerSec = parseInt(document.getElementById('select-time').value);
+            const sub = document.getElementById('select-subject').value;
+            const top = document.getElementById('select-topic').value;
+            let filtered = questionBank.filter(q => (sub === 'all' || q.sub === sub) && (top === 'all' || q.topic === top));
+            
+            testQs = filtered.sort(() => 0.5 - Math.random());
+            userAns = testQs.map(() => ({ selected: null, status: 'unvisited' }));
+            
+            document.getElementById('setup-screen').classList.add('hidden-view');
+            document.getElementById('quiz-area').classList.remove('hidden-view');
+            loadQ(0); startTimer();
+        }
+
+        function startTimer() {
+            const tEl = document.getElementById('timer');
+            clock = setInterval(() => {
+                let m = Math.floor(timerSec/60); let s = timerSec%60;
+                tEl.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                if(timerSec <= 60) tEl.classList.add('timer-red-alert');
+                if(timerSec-- <= 0) { clearInterval(clock); submitQuiz(); }
+            }, 1000);
+        }
+
+        function loadQ(idx) {
+            curIdx = idx; const q = testQs[idx]; const state = userAns[idx];
+            if(state.status === 'unvisited') state.status = 'visited';
+            document.getElementById('q-number').innerText = `Q${idx + 1}`;
+            document.getElementById('q-meta').innerText = `${q.sub} | ${q.topic}`;
+            document.getElementById('q-text').innerText = q.q;
+            const cont = document.getElementById('options-container'); cont.innerHTML = '';
+            q.o.forEach((opt, i) => {
+                const sel = state.selected === i;
+                cont.innerHTML += `<div onclick="pick(${i})" class="p-4 border-2 rounded-xl cursor-pointer flex items-center transition-all ${sel ? 'border-blue-600 bg-blue-50 dark:bg-blue-900' : 'border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'}">
+                    <div class="w-4 h-4 rounded-full border-2 mr-3 ${sel ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}"></div>
+                    <span class="font-bold text-gray-700 dark:text-gray-200">${opt}</span></div>`;
+            });
+            renderPal();
+        }
+
+        function pick(i) { userAns[curIdx].selected = i; loadQ(curIdx); }
+        function saveNext() { userAns[curIdx].status = userAns[curIdx].selected !== null ? 'answered' : 'visited'; if(curIdx < testQs.length-1) loadQ(curIdx+1); else renderPal(); }
+        function prevQ() { if(curIdx > 0) loadQ(curIdx-1); }
+        function markReview() { userAns[curIdx].status = 'review'; saveNext(); }
+        function togglePalette() { document.getElementById('palette-sidebar').classList.toggle('open'); }
+        
+        function renderPal() {
+            const grid = document.getElementById('palette-grid'); grid.innerHTML = '';
+            userAns.forEach((s, i) => {
+                let c = s.status === 'answered' ? 'status-answered' : s.status === 'review' ? 'status-review' : (s.status === 'visited' && s.selected === null) ? 'status-not-answered' : 'status-unvisited';
+                grid.innerHTML += `<button onclick="loadQ(${i})" class="w-10 h-10 rounded-lg font-black text-xs ${c} ${curIdx === i ? 'ring-4 ring-blue-300' : ''}">${i+1}</button>`;
+            });
+        }
+
+        function submitQuiz() {
+            clearInterval(clock);
+            document.getElementById('quiz-area').classList.add('hidden-view');
+            document.getElementById('analysis-view').classList.remove('hidden-view');
+            const rList = document.getElementById('review-list'); rList.innerHTML = '';
+            userAns.forEach((s, i) => {
+                const isC = s.selected === testQs[i].a;
+                rList.innerHTML += `<div class="p-6 border-2 rounded-2xl shadow-sm bg-white dark:bg-gray-800 dark:border-gray-700">
+                    <p class="font-black text-gray-800 dark:text-gray-100 mb-2">Q${i+1}: ${testQs[i].q}</p>
+                    <div class="text-sm mb-4">
+                        <span class="${isC ? 'text-green-600' : 'text-red-600'} font-bold">Your: ${s.selected !== null ? testQs[i].o[s.selected] : 'Skip'}</span> | 
+                        <span class="text-blue-600 dark:text-blue-400 font-black">Correct: ${testQs[i].o[testQs[i].a]}</span>
+                    </div>
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 border-l-4 border-blue-600 text-sm italic whitespace-pre-wrap dark:text-gray-300">${testQs[i].sol}</div>
+                </div>`;
+            });
+        }
+
+        function resetQuiz() {
+            document.getElementById('analysis-view').classList.add('hidden-view');
+            document.getElementById('setup-screen').classList.remove('hidden-view');
+            testQs = []; curIdx = 0; userAns = []; 
+        }
+
+        window.onload = initSetup;
+    </script>
+</body>
+</html>
