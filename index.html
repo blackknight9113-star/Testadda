@@ -3,73 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Official Exam Portal v5</title>
+    <title>Test Adda - Subject & Topic Wise</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
-        #palette-grid button { aspect-ratio: 1/1; border-radius: 4px; font-weight: 800; font-size: 0.8rem; }
+        #palette-grid button { aspect-ratio: 1/1; border-radius: 6px; font-weight: 800; font-size: 0.8rem; transition: 0.2s; }
         .status-unvisited { background-color: #3b82f6; color: white; }
-        .status-not-answered { background-color: #ef4444; color: white; }
-        .status-answered { background-color: #22c55e; color: white; }
-        .status-review { background-color: #8b5cf6; color: white; position: relative; }
-        .status-review.has-ans::after { 
-            content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; 
-            background: #22c55e; border-radius: 50%; border: 1px solid white; 
-        }
-        #theme-toggle { touch-action: none; cursor: move; width: 45px; height: 45px; z-index: 2000; }
+        .status-not-answered { background-color: #ef4444; }
+        .status-answered { background-color: #22c55e; }
+        .status-review { background-color: #8b5cf6; position: relative; }
+        .status-review.has-ans::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; background: #22c55e; border-radius: 50%; border: 1px solid white; }
+        .hidden-view { display: none !important; }
         #palette-sidebar { transition: 0.4s ease; transform: translateX(100%); z-index: 1000; }
         #palette-sidebar.open { transform: translateX(0); }
-        .hidden-view { display: none !important; }
-        .section-tab.active { border-bottom: 4px solid #fff; background: rgba(255,255,255,0.1); }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-[#121212] text-gray-900 dark:text-gray-100 font-sans overflow-hidden">
 
-    <div id="theme-toggle" class="fixed top-20 left-4 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center no-print">
-        <span id="theme-icon">🌙</span>
-    </div>
+    <script src="./questions.js"></script>
 
-    <div id="setup-screen" class="min-h-screen flex items-center justify-center p-4 overflow-y-auto">
+    <div id="setup-screen" class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl max-w-md w-full border-t-8 border-blue-700">
-            <h1 class="text-2xl font-black text-center mb-6 text-blue-800 dark:text-blue-400">TEST ADDA LIVE</h1>
-            <div class="space-y-4">
-                <input type="text" id="student-id" placeholder="Student Name" class="w-full p-3 rounded-xl border-2 dark:bg-gray-700 font-bold outline-none">
+            <h1 class="text-2xl font-black text-center mb-6 text-blue-800">EXAM SETUP</h1>
+            
+            <div class="space-y-5">
+                <input type="text" id="student-id" placeholder="Student Name" class="w-full p-3 rounded-xl border-2 dark:bg-gray-700 font-bold outline-none border-gray-200 focus:border-blue-500">
                 
-                <div class="flex flex-col">
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Select Topic/Subject</label>
-                    <select id="test-topic" class="p-3 rounded-xl border-2 dark:bg-gray-700 font-bold">
-                        <option value="Full Mock Test">Full Mock Test</option>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">1. Select Subject</label>
+                    <select id="subject-select" onchange="updateTopics()" class="w-full p-3 rounded-xl border-2 dark:bg-gray-700 font-bold">
+                        <option value="">-- Choose Subject --</option>
                         <option value="Mathematics">Mathematics</option>
                         <option value="Reasoning">Reasoning</option>
-                        <option value="General Awareness">General Awareness</option>
+                        <option value="GK">General Knowledge</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">2. Select Topic</label>
+                    <select id="topic-select" class="w-full p-3 rounded-xl border-2 dark:bg-gray-700 font-bold" disabled>
+                        <option value="">-- Select Subject First --</option>
                     </select>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <select id="neg-mark" class="p-3 rounded-xl border-2 dark:bg-gray-700 font-bold">
-                        <option value="0">No Negative</option>
-                        <option value="0.25">0.25 Mark</option>
-                    </select>
-                    <input type="number" id="custom-time" value="60" class="p-3 rounded-xl border-2 dark:bg-gray-700 font-bold">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">Time (Min)</label>
+                        <input type="number" id="custom-time" value="30" class="w-full p-3 rounded-xl border-2 dark:bg-gray-700 font-bold">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">Neg. Mark</label>
+                        <select id="neg-mark" class="w-full p-3 rounded-xl border-2 dark:bg-gray-700 font-bold">
+                            <option value="0">None</option>
+                            <option value="0.25">0.25</option>
+                        </select>
+                    </div>
                 </div>
-                <button onclick="startTest()" class="w-full bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg">START TEST</button>
+
+                <button onclick="startTest()" class="w-full bg-blue-700 text-white py-4 rounded-2xl font-black text-lg shadow-xl hover:bg-blue-800">START TEST</button>
             </div>
         </div>
     </div>
 
     <div id="quiz-area" class="hidden-view h-screen flex flex-col">
-        <header class="bg-blue-700 dark:bg-blue-900 text-white flex flex-col shadow-lg z-50">
-            <div class="px-4 py-2 flex justify-between items-center border-b border-white/10">
-                <div id="timer" class="text-xl font-mono font-bold">00:00</div>
-                <div class="font-black text-sm uppercase tracking-tighter" id="display-topic">TOPIC NAME</div>
+        <header class="bg-blue-700 dark:bg-blue-900 text-white shadow-lg z-50">
+            <div class="px-4 py-3 flex justify-between items-center border-b border-white/10">
+                <div id="timer" class="text-xl font-mono font-bold text-yellow-300">00:00</div>
+                <div class="text-[10px] font-black uppercase text-center">
+                    <span id="display-sub" class="opacity-60">SUBJECT</span><br>
+                    <span id="display-top" class="text-sm tracking-widest">TOPIC</span>
+                </div>
                 <button onclick="togglePalette()" class="bg-white/20 p-2 rounded-lg">
                     <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg>
                 </button>
-            </div>
-            <div class="flex overflow-x-auto no-scrollbar text-[11px] font-bold uppercase">
-                <button class="section-tab active px-6 py-3 whitespace-nowrap">Section A</button>
-                <button class="section-tab px-6 py-3 whitespace-nowrap opacity-60">Section B</button>
-                <button class="section-tab px-6 py-3 whitespace-nowrap opacity-60">Section C</button>
             </div>
         </header>
 
@@ -77,7 +83,7 @@
             <div class="flex-1 flex flex-col bg-white dark:bg-[#1a1a1a]">
                 <div class="px-4 py-2 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
                     <span id="q-number-box" class="bg-blue-600 text-white px-4 py-1 rounded-full font-black">1</span>
-                    <div class="text-[10px] font-bold text-gray-500 uppercase">Spent: <span id="q-timer" class="text-blue-600">00:00</span></div>
+                    <button onclick="clearResponse()" class="text-[10px] font-bold text-red-500 underline">CLEAR RESPONSE</button>
                 </div>
 
                 <div id="quiz-container" class="p-6 overflow-y-auto flex-1">
@@ -85,83 +91,101 @@
                     <div id="options-container" class="space-y-4"></div>
                 </div>
                 
-                <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-800 grid grid-cols-3 gap-2 no-print">
-                    <button onclick="prevQ()" class="bg-gray-200 dark:bg-gray-700 py-3 rounded-xl font-bold text-xs">PREVIOUS</button>
-                    <button onclick="markReview()" class="bg-purple-600 text-white py-3 rounded-xl font-bold text-xs">MARK REVIEW</button>
-                    <button onclick="saveNext()" class="bg-green-600 text-white py-3 rounded-xl font-black text-xs">SAVE & NEXT</button>
+                <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-800 grid grid-cols-3 gap-3 no-print">
+                    <button onclick="prevQ()" class="bg-gray-200 dark:bg-gray-700 py-4 rounded-xl font-bold text-xs">PREV</button>
+                    <button onclick="markReview()" class="bg-purple-600 text-white py-4 rounded-xl font-bold text-xs">REVIEW</button>
+                    <button onclick="saveNext()" class="bg-green-600 text-white py-4 rounded-xl font-black text-xs shadow-lg">SAVE & NEXT</button>
                 </div>
             </div>
 
             <aside id="palette-sidebar" class="fixed right-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-800 shadow-2xl p-6 flex flex-col">
-                <h3 class="font-black text-xs text-gray-400 uppercase mb-4">Question Palette</h3>
-                <div id="palette-grid" class="grid grid-cols-4 gap-3 overflow-y-auto mb-6"></div>
-                <div class="text-[9px] font-bold space-y-1 mb-4 border-t pt-4">
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-green-500 rounded"></span> Answered</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-500 rounded"></span> Not Answered</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-purple-500 rounded"></span> Marked for Review</div>
-                </div>
+                <h3 class="font-black text-xs text-gray-400 uppercase mb-6">Question Palette</h3>
+                <div id="palette-grid" class="grid grid-cols-4 gap-3 overflow-y-auto mb-6 pr-2"></div>
                 <button onclick="submitQuiz()" class="mt-auto bg-red-600 text-white py-4 rounded-xl font-black uppercase shadow-lg">Final Submit</button>
             </aside>
         </main>
     </div>
 
-    <div id="analysis-view" class="hidden-view p-6 bg-gray-100 dark:bg-[#0f172a] min-h-screen overflow-y-auto">
-        </div>
-
     <script>
-        // (Isme Prev, Topic selection aur status update ka sara logic integrated hai)
+        // Topic Data - Aap ise apni zarurat ke hisaab se badal sakte hain
+        const topicMap = {
+            "Mathematics": ["Average", "Percentage", "Profit & Loss", "Time & Work"],
+            "Reasoning": ["Coding-Decoding", "Blood Relation", "Syllogism"],
+            "GK": ["History", "Geography", "Current Affairs"]
+        };
+
+        function updateTopics() {
+            const sub = document.getElementById('subject-select').value;
+            const topSelect = document.getElementById('topic-select');
+            topSelect.innerHTML = '<option value="">-- Choose Topic --</option>';
+            
+            if(sub && topicMap[sub]) {
+                topSelect.disabled = false;
+                topicMap[sub].forEach(t => {
+                    topSelect.innerHTML += `<option value="${t}">${t}</option>`;
+                });
+            } else {
+                topSelect.disabled = true;
+            }
+        }
+
         let testQs = []; let curIdx = 0; let userAns = []; let timerSec = 0; let clock; let qStartTime;
 
-        // Draggable Toggle Logic
-        const dragBox = document.getElementById('theme-toggle');
-        let isDragging = false, startX, startY;
-        dragBox.addEventListener('pointerdown', e => { isDragging = false; startX = e.clientX; startY = e.clientY; dragBox.setPointerCapture(e.pointerId); });
-        dragBox.addEventListener('pointermove', e => { if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) { isDragging = true; dragBox.style.left = (e.clientX - 22) + 'px'; dragBox.style.top = (e.clientY - 22) + 'px'; } });
-        dragBox.addEventListener('pointerup', () => { if (!isDragging) document.documentElement.classList.toggle('dark'); isDragging = false; });
-
         function startTest() {
-            document.getElementById('display-topic').innerText = document.getElementById('test-topic').value;
-            // Question selection logic
-            testQs = typeof questionBank !== 'undefined' ? questionBank.sort(() => 0.5 - Math.random()).slice(0, 50) : [];
+            const sub = document.getElementById('subject-select').value;
+            const top = document.getElementById('topic-select').value;
+            
+            if(!sub || !top) return alert("Please select Subject and Topic!");
+            if(typeof questionBank === 'undefined') return alert("questions.js missing!");
+
+            // Logic: questionBank mein har question mein 's' (subject) aur 't' (topic) hona chahiye
+            testQs = questionBank.filter(q => q.s === sub && q.t === top);
+            
+            if(testQs.length === 0) return alert("No questions found for this Topic!");
+
             userAns = testQs.map(() => ({ selected: null, status: 'unvisited', timeSpent: 0 }));
-            timerSec = (parseInt(document.getElementById('custom-time').value) || 60) * 60;
+            timerSec = (parseInt(document.getElementById('custom-time').value) || 30) * 60;
+            
+            document.getElementById('display-sub').innerText = sub;
+            document.getElementById('display-top').innerText = top;
             document.getElementById('setup-screen').classList.add('hidden-view');
             document.getElementById('quiz-area').classList.remove('hidden-view');
+            
             loadQ(0); startTimer();
         }
 
+        // Timer, LoadQ, Navigation functions same as before...
         function startTimer() {
             clock = setInterval(() => {
                 let m = Math.floor(timerSec/60), s = timerSec%60;
                 document.getElementById('timer').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-                let qElapsed = Math.floor((Date.now() - qStartTime) / 1000);
-                document.getElementById('q-timer').innerText = `${String(Math.floor(qElapsed/60)).padStart(2,'0')}:${String(qElapsed%60).padStart(2,'0')}`;
                 if(timerSec-- <= 0) submitQuiz();
             }, 1000);
         }
 
         function loadQ(idx) {
-            if (qStartTime) userAns[curIdx].timeSpent += Math.floor((Date.now() - qStartTime) / 1000);
-            curIdx = idx; qStartTime = Date.now();
+            curIdx = idx;
             const q = testQs[idx], state = userAns[idx];
             document.getElementById('q-number-box').innerText = idx + 1;
             document.getElementById('q-text').innerText = q.q;
             const cont = document.getElementById('options-container'); cont.innerHTML = '';
             q.o.forEach((opt, i) => {
-                cont.innerHTML += `<div onclick="pick(${i})" class="p-4 border-2 rounded-xl cursor-pointer flex gap-4 transition-all ${state.selected === i ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-gray-100 dark:border-gray-700'}">
-                    <span class="w-7 h-7 rounded-full border flex items-center justify-center font-bold ${state.selected === i ? 'bg-blue-600 text-white' : 'text-gray-400'}">${i+1}</span>
+                const sel = state.selected === i;
+                cont.innerHTML += `<div onclick="pick(${i})" class="p-4 border-2 rounded-2xl cursor-pointer flex gap-4 transition-all ${sel ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-gray-100 dark:border-gray-700'}">
+                    <span class="w-7 h-7 rounded-full border flex items-center justify-center font-bold ${sel ? 'bg-blue-600 text-white' : 'text-gray-400'}">${i+1}</span>
                     <span class="font-bold">${opt}</span></div>`;
             });
             renderPal();
         }
 
         function pick(i) { userAns[curIdx].selected = i; loadQ(curIdx); }
+        function prevQ() { if(curIdx > 0) loadQ(curIdx - 1); }
         function saveNext() { 
             userAns[curIdx].status = userAns[curIdx].selected !== null ? 'answered' : 'not-answered';
-            if(curIdx < testQs.length-1) loadQ(curIdx+1);
+            if(curIdx < testQs.length - 1) loadQ(curIdx + 1); else togglePalette();
         }
-        function prevQ() { if(curIdx > 0) loadQ(curIdx-1); }
-        function markReview() { userAns[curIdx].status = 'review'; if(curIdx < testQs.length-1) loadQ(curIdx+1); }
+        function markReview() { userAns[curIdx].status = 'review'; if(curIdx < testQs.length - 1) loadQ(curIdx + 1); else togglePalette(); }
+        function clearResponse() { userAns[curIdx].selected = null; userAns[curIdx].status = 'unvisited'; loadQ(curIdx); }
         function togglePalette() { document.getElementById('palette-sidebar').classList.toggle('open'); }
         
         function renderPal() {
@@ -171,13 +195,11 @@
                 if(s.status === 'answered') cls = 'status-answered';
                 else if(s.status === 'review') cls = 'status-review' + (s.selected !== null ? ' has-ans' : '');
                 else if(s.status === 'not-answered') cls = 'status-not-answered';
-                grid.innerHTML += `<button onclick="loadQ(${i}); togglePalette()" class="${cls} ${curIdx === i ? 'ring-4 ring-blue-400' : ''}">${i+1}</button>`;
+                grid.innerHTML += `<button onclick="loadQ(${i}); togglePalette()" class="${cls} ${curIdx === i ? 'ring-4 ring-blue-300' : ''}">${i+1}</button>`;
             });
         }
 
-        function submitQuiz() {
-            if(confirm("Are you sure to submit?")) location.reload(); // Simple reload for demo
-        }
+        function submitQuiz() { if(confirm("Submit Examination?")) location.reload(); }
     </script>
 </body>
 </html>
