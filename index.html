@@ -11,8 +11,8 @@
         .status-answered { background-color: #22c55e !important; }
         .status-review { background-color: #8b5cf6 !important; position: relative; }
         .hidden-view { display: none !important; }
-        #palette-sidebar { transition: 0.4s ease; transform: translateX(100%); z-index: 1000; }
-        #palette-sidebar.open { transform: translateX(0); }
+        /* Smooth Sidebar Animation */
+        #palette-sidebar { transition: transform 0.3s ease-in-out; z-index: 1000; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-900 font-sans overflow-hidden">
@@ -22,22 +22,14 @@
             <h2 class="text-2xl font-black text-center mb-6 text-blue-800">TEST ADDA LIVE</h2>
             <div class="space-y-4">
                 <input type="text" id="student-name" placeholder="Enter Your Name" class="w-full p-3 rounded-xl border-2 font-bold outline-none border-gray-200">
-                
-                <select id="subject-select" onchange="updateTopics()" class="w-full p-3 rounded-xl border-2 font-bold bg-white">
-                    <option value="">-- Select Subject --</option>
-                </select>
-
-                <select id="topic-select" onchange="updateMaxQs()" class="w-full p-3 rounded-xl border-2 font-bold bg-white" disabled>
-                    <option value="">-- Select Topic --</option>
-                </select>
-
+                <select id="subject-select" onchange="updateTopics()" class="w-full p-3 rounded-xl border-2 font-bold bg-white"><option value="">-- Select Subject --</option></select>
+                <select id="topic-select" onchange="updateMaxQs()" class="w-full p-3 rounded-xl border-2 font-bold bg-white" disabled><option value="">-- Select Topic --</option></select>
                 <div>
-                    <label class="text-[10px] font-bold text-gray-400 ml-1">QUESTIONS LIMIT</label>
+                    <label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">Questions Limit</label>
                     <input type="number" id="q-limit" value="5" min="1" class="w-full p-3 rounded-xl border-2 font-bold">
-                    <p id="max-q-msg" class="text-[9px] text-blue-500 mt-1"></p>
+                    <p id="max-q-msg" class="text-[9px] text-blue-500 mt-1 font-bold"></p>
                 </div>
-
-                <button onclick="startTest()" class="w-full bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg">START TEST</button>
+                <button onclick="startTest()" class="w-full bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-blue-800 transition">START TEST</button>
             </div>
         </div>
     </div>
@@ -46,7 +38,7 @@
         <header class="bg-blue-700 text-white p-4 flex justify-between items-center shadow-md">
             <div id="timer" class="text-xl font-mono font-bold">00:00</div>
             <div class="text-center font-black text-xs uppercase"><span id="display-top"></span></div>
-            <button onclick="togglePalette()" class="bg-white/20 p-2 rounded-lg">☰</button>
+            <button onclick="togglePalette()" class="bg-white/20 px-3 py-1 rounded-lg font-black text-sm">MENU ☰</button>
         </header>
 
         <main class="flex-1 flex overflow-hidden relative">
@@ -60,15 +52,19 @@
                     <div id="options-container" class="space-y-3"></div>
                 </div>
                 <div class="p-4 bg-gray-50 border-t grid grid-cols-3 gap-3">
-                    <button onclick="prevQ()" class="bg-gray-200 py-3 rounded-xl font-bold text-xs">PREV</button>
-                    <button onclick="markReview()" class="bg-purple-600 text-white py-3 rounded-xl font-bold text-xs">REVIEW</button>
-                    <button onclick="saveNext()" class="bg-green-600 text-white py-3 rounded-xl font-black text-xs">SAVE & NEXT</button>
+                    <button onclick="prevQ()" class="bg-gray-200 hover:bg-gray-300 py-4 rounded-xl font-black text-[10px] uppercase">Prev</button>
+                    <button onclick="markReview()" class="bg-purple-600 text-white hover:bg-purple-700 py-4 rounded-xl font-black text-[10px] uppercase">Review</button>
+                    <button onclick="saveNext()" class="bg-green-600 text-white hover:bg-green-700 py-4 rounded-xl font-black text-[10px] uppercase">Save & Next</button>
                 </div>
             </div>
-            <aside id="palette-sidebar" class="fixed right-0 top-0 bottom-0 w-64 bg-white shadow-2xl p-6 flex flex-col">
-                <h3 class="font-black text-xs text-gray-400 mb-4">PALETTE</h3>
-                <div id="palette-grid" class="grid grid-cols-4 gap-2 mb-6"></div>
-                <button onclick="submitQuiz()" class="mt-auto bg-red-600 text-white py-4 rounded-xl font-black">SUBMIT</button>
+
+            <aside id="palette-sidebar" class="fixed right-0 top-0 bottom-0 w-72 bg-white shadow-2xl p-6 flex flex-col translate-x-full">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-black text-xs text-gray-400 uppercase tracking-widest">Question Palette</h3>
+                    <button onclick="togglePalette()" class="text-red-500 font-black text-xs bg-red-50 px-2 py-1 rounded">CLOSE ✖</button>
+                </div>
+                <div id="palette-grid" class="grid grid-cols-4 gap-2 mb-6 overflow-y-auto"></div>
+                <button onclick="submitQuiz()" class="mt-auto bg-red-600 text-white py-4 rounded-xl font-black shadow-lg">FINAL SUBMIT</button>
             </aside>
         </main>
     </div>
@@ -76,17 +72,16 @@
     <div id="analysis-view" class="hidden-view p-6 bg-gray-50 min-h-screen overflow-y-auto">
         <div class="max-w-3xl mx-auto">
             <div class="bg-white p-6 rounded-3xl shadow-xl mb-6 text-center border-t-8 border-green-500">
-                <h1 class="text-2xl font-black text-blue-700 mb-2 uppercase">Analysis Report</h1>
-                <p id="res-name" class="font-bold text-gray-500 mb-4"></p>
-                <div class="flex justify-around border-t pt-4">
-                    <div><p class="text-[10px] font-bold text-gray-400">CORRECT</p><h3 id="res-correct" class="text-xl font-black text-green-600">0</h3></div>
-                    <div><p class="text-[10px] font-bold text-gray-400">WRONG</p><h3 id="res-wrong" class="text-xl font-black text-red-600">0</h3></div>
-                    <div><p class="text-[10px] font-bold text-gray-400">AVG TIME</p><h3 id="res-avg-time" class="text-xl font-black text-blue-600">0s</h3></div>
+                <h1 class="text-2xl font-black text-blue-700 mb-2 uppercase italic">Test Summary</h1>
+                <p id="res-name" class="font-bold text-gray-500 mb-4 text-sm"></p>
+                <div class="grid grid-cols-3 gap-2 border-t pt-4">
+                    <div><p class="text-[9px] font-black text-gray-400">CORRECT</p><h3 id="res-correct" class="text-xl font-black text-green-600">0</h3></div>
+                    <div><p class="text-[9px] font-black text-gray-400">WRONG</p><h3 id="res-wrong" class="text-xl font-black text-red-600">0</h3></div>
+                    <div><p class="text-[9px] font-black text-gray-400">AVG TIME</p><h3 id="res-avg-time" class="text-xl font-black text-blue-600">0s</h3></div>
                 </div>
-                <p class="text-xs text-orange-500 mt-4 font-bold italic">Result saved to Cloud Database!</p>
             </div>
             <div id="review-list" class="space-y-4 pb-10"></div>
-            <button onclick="location.reload()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black">BACK TO HOME</button>
+            <button onclick="location.reload()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest">Exit Portal</button>
         </div>
     </div>
 
@@ -109,7 +104,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Function to upload result to Firebase
         window.uploadToFirebase = async (data) => {
             try {
                 await addDoc(collection(db, "results"), data);
@@ -125,7 +119,7 @@
         let mainClock; let qStartTimestamp;
 
         window.onload = function() {
-            if(typeof questionBank === 'undefined') return alert("questions.js not found!");
+            if(typeof questionBank === 'undefined') return alert("questions.js file missing!");
             const subjects = [...new Set(questionBank.map(q => q.s))];
             subjects.forEach(s => document.getElementById('subject-select').innerHTML += `<option value="${s}">${s}</option>`);
         };
@@ -146,7 +140,12 @@
             const top = document.getElementById('topic-select').value;
             const available = questionBank.filter(q => q.s === sub && q.t === top).length;
             document.getElementById('q-limit').value = available;
-            document.getElementById('max-q-msg').innerText = `Available: ${available} questions`;
+            document.getElementById('max-q-msg').innerText = `Max questions available: ${available}`;
+        }
+
+        function togglePalette() {
+            const sidebar = document.getElementById('palette-sidebar');
+            sidebar.classList.toggle('translate-x-full');
         }
 
         function startTest() {
@@ -155,14 +154,13 @@
             const limit = parseInt(document.getElementById('q-limit').value);
             const name = document.getElementById('student-name').value;
             
-            if(!name) return alert("Please enter your name!");
-            if(!sub || !top) return alert("Select Subject & Topic!");
+            if(!name || !sub || !top) return alert("Please fill all details!");
 
             let filtered = questionBank.filter(q => q.s === sub && q.t === top);
             testQs = filtered.sort(() => 0.5 - Math.random()).slice(0, limit);
             
             userAns = testQs.map(() => ({ selected: null, status: 'unvisited', timeSpent: 0 }));
-            timerSec = testQs.length * 60;
+            timerSec = testQs.length * 60; // 1 min per question
 
             document.getElementById('display-top').innerText = top;
             document.getElementById('setup-screen').classList.add('hidden-view');
@@ -192,7 +190,7 @@
                 const sel = userAns[idx].selected === i;
                 cont.innerHTML += `<div onclick="pick(${i})" class="p-4 border-2 rounded-xl cursor-pointer flex gap-3 ${sel ? 'border-blue-600 bg-blue-50' : 'border-gray-100'}">
                     <span class="w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold ${sel ? 'bg-blue-600 text-white' : ''}">${i+1}</span>
-                    <span class="font-bold">${opt}</span></div>`;
+                    <span class="font-bold text-sm">${opt}</span></div>`;
             });
             renderPal();
         }
@@ -204,7 +202,7 @@
         }
         function prevQ() { if(curIdx > 0) loadQ(curIdx - 1); }
         function markReview() { userAns[curIdx].status = 'review'; if(curIdx < testQs.length - 1) loadQ(curIdx + 1); }
-        function togglePalette() { document.getElementById('palette-sidebar').classList.toggle('open'); }
+
         function renderPal() {
             const grid = document.getElementById('palette-grid'); grid.innerHTML = '';
             userAns.forEach((s, i) => {
@@ -212,12 +210,12 @@
                 if(s.status === 'answered') cls = 'status-answered';
                 else if(s.status === 'review') cls = 'status-review';
                 else if(s.status === 'not-answered') cls = 'status-not-answered';
-                grid.innerHTML += `<button onclick="loadQ(${i}); togglePalette()" class="p-2 text-white font-bold rounded ${cls} ${curIdx === i ? 'ring-4 ring-yellow-400' : ''}">${i+1}</button>`;
+                grid.innerHTML += `<button onclick="loadQ(${i}); togglePalette()" class="p-3 text-white font-bold rounded-lg ${cls} ${curIdx === i ? 'ring-4 ring-yellow-400' : ''}">${i+1}</button>`;
             });
         }
 
         async function submitQuiz() {
-            if(!confirm("Submit Test?")) return;
+            if(!confirm("Are you sure you want to submit?")) return;
             userAns[curIdx].timeSpent += Math.floor((Date.now() - qStartTimestamp) / 1000);
             clearInterval(mainClock);
 
@@ -226,7 +224,7 @@
 
             let correct = 0, wrong = 0, totalTime = 0;
             const rList = document.getElementById('review-list');
-            rList.innerHTML = '<h3 class="font-black mb-4">Question Analysis</h3>';
+            rList.innerHTML = '<h3 class="font-black mb-4 uppercase text-gray-400 text-xs">Correction Guide</h3>';
 
             userAns.forEach((ans, i) => {
                 const q = testQs[i];
@@ -236,12 +234,13 @@
 
                 rList.innerHTML += `
                     <div class="bg-white p-5 rounded-2xl shadow-sm mb-4 border-l-8 ${isCorrect?'border-green-500':'border-red-500'}">
-                        <div class="flex justify-between text-[10px] font-bold text-blue-500 mb-2">
-                            <span>Q. ${i+1}</span> <span>TIME: ${ans.timeSpent}s</span>
+                        <div class="flex justify-between text-[9px] font-black text-blue-500 mb-2">
+                            <span>QUESTION ${i+1}</span> <span>TIME: ${ans.timeSpent}s</span>
                         </div>
-                        <p class="font-bold mb-3">${q.q}</p>
-                        <p class="text-sm"><b>Correct Ans:</b> ${q.o[q.a]}</p>
-                        <div class="mt-2 text-[10px] bg-gray-50 p-2 rounded"><b>Sol:</b> ${q.sol || 'No solution available'}</div>
+                        <p class="font-bold mb-3 text-gray-800">${q.q}</p>
+                        <p class="text-sm"><b>Right Ans:</b> <span class="text-green-600">${q.o[q.a]}</span></p>
+                        ${ans.selected !== null ? `<p class="text-sm"><b>Your Ans:</b> <span class="${isCorrect?'text-green-600':'text-red-600'}">${q.o[ans.selected]}</span></p>` : '<p class="text-sm text-gray-400 italic">Not Answered</p>'}
+                        <div class="mt-3 text-[10px] bg-gray-50 p-2 rounded border border-dashed border-gray-200 text-gray-600"><b>EXPLANATION:</b> ${q.sol || 'Self-explanatory.'}</div>
                     </div>`;
             });
 
@@ -249,9 +248,8 @@
             document.getElementById('res-correct').innerText = correct;
             document.getElementById('res-wrong').innerText = wrong;
             document.getElementById('res-avg-time').innerText = Math.round(totalTime/testQs.length) + "s";
-            document.getElementById('res-name').innerText = document.getElementById('student-name').value;
+            document.getElementById('res-name').innerText = "Student: " + document.getElementById('student-name').value;
 
-            // --- FIREBASE DATA UPLOAD ---
             const firebaseData = {
                 student: document.getElementById('student-name').value,
                 subject: document.getElementById('subject-select').value,
@@ -263,9 +261,7 @@
                 date: new Date().toISOString()
             };
             
-            if(window.uploadToFirebase) {
-                window.uploadToFirebase(firebaseData);
-            }
+            if(window.uploadToFirebase) window.uploadToFirebase(firebaseData);
         }
     </script>
 </body>
