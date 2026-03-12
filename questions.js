@@ -4,15 +4,16 @@ const questionBank = [
         o: ["72.5 kg", "74.5 kg", "73.5 kg", "71.5 kg"],
         a: 0,
         sub: "Maths",
-        topic: "Average",
-        sol: "41 × 52.5 - 40 × 52 = 72.5 kg"
+        t: "Average",
+        sol: "41 × 52.5 - 40 × 52 = 72.5 kg",
+        
     },
     {
         q: "What is the average of first 10 even natural numbers?",
         o: ["10", "11", "12", "15"],
         a: 1,
         sub: "Maths",
-        topic: "Series",
+        t: "Series",
         sol: "Formula: n + 1 = 10 + 1 = 11"
     }
 ];
