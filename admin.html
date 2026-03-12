@@ -1,0 +1,144 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Test Adda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        .hidden-panel { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+
+    <div id="login-screen" class="min-h-[80vh] flex items-center justify-center">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
+            <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-2xl">🔐</span>
+            </div>
+            <h2 class="text-xl font-black mb-4">Admin Login</h2>
+            <input type="password" id="admin-pass" placeholder="Enter Password" class="w-full p-3 border-2 rounded-xl mb-4 text-center font-bold outline-none focus:border-blue-600">
+            <button onclick="checkPass()" class="w-full bg-blue-700 text-white py-3 rounded-xl font-black hover:bg-blue-800 transition">Unlock Dashboard</button>
+            <p id="error-msg" class="text-red-500 text-xs mt-3 font-bold hidden"></p>
+        </div>
+    </div>
+
+    <div id="admin-content" class="max-w-6xl mx-auto hidden-panel">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-blue-700 p-6 rounded-2xl shadow-lg text-white gap-4">
+            <div>
+                <h1 class="text-2xl font-black italic">ADMIN DASHBOARD</h1>
+                <p class="text-xs opacity-80 uppercase tracking-widest">Secured Access</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="exportToExcel()" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition flex items-center gap-2">
+                   <span>📊</span> Download Excel
+                </button>
+                <button onclick="location.reload()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg font-bold text-sm transition">
+                    🔄 Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-200">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="p-4 text-xs font-black text-gray-500 uppercase">Student Name</th>
+                            <th class="p-4 text-xs font-black text-gray-500 uppercase">Subject & Topic</th>
+                            <th class="p-4 text-xs font-black text-gray-500 uppercase text-center">Score</th>
+                            <th class="p-4 text-xs font-black text-gray-500 uppercase text-center">Avg Time</th>
+                            <th class="p-4 text-xs font-black text-gray-500 uppercase">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table" class="divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
+            <div id="loading-spinner" class="p-10 text-center font-bold text-gray-400 italic">Connecting to Firebase...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKTKiZVZ3GsiQDPn_8g8_Kc0LNeynK5SY",
+            authDomain: "mytestadda-4628a.firebaseapp.com",
+            projectId: "mytestadda-4628a",
+            storageBucket: "mytestadda-4628a.firebasestorage.app",
+            messagingSenderId: "423993478549",
+            appId: "1:423993478549:web:614ebefa9b54a75105fa9c",
+            measurementId: "G-JBE28ES8BL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.resultsData = [];
+
+        // PASSWORD LOGIC
+        const SECRET_PASSWORD = "admin123"; // <--- APNA PASSWORD YAHAN BADLEIN
+
+        window.checkPass = () => {
+            const input = document.getElementById('admin-pass').value;
+            const error = document.getElementById('error-msg');
+            
+            if(input === SECRET_PASSWORD) {
+                document.getElementById('login-screen').classList.add('hidden-panel');
+                document.getElementById('admin-content').classList.remove('hidden-panel');
+                fetchResults();
+            } else {
+                error.innerText = "Wrong Password! Try Again.";
+                error.classList.remove('hidden');
+            }
+        };
+
+        async function fetchResults() {
+            const table = document.getElementById('results-table');
+            const spinner = document.getElementById('loading-spinner');
+            
+            try {
+                const q = query(collection(db, "results"), orderBy("date", "desc"));
+                const querySnapshot = await getDocs(q);
+                table.innerHTML = "";
+                spinner.style.display = "none";
+
+                if (querySnapshot.empty) {
+                    table.innerHTML = "<tr><td colspan='5' class='p-10 text-center font-bold text-gray-300'>No data found.</td></tr>";
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    window.resultsData.push({
+                        "Student": data.student,
+                        "Subject": data.subject,
+                        "Topic": data.topic,
+                        "Score": data.score,
+                        "Avg Time": data.avgTime + "s",
+                        "Date": new Date(data.date).toLocaleString()
+                    });
+
+                    table.innerHTML += `
+                        <tr class="hover:bg-blue-50 transition">
+                            <td class="p-4 font-black text-gray-800">${data.student}</td>
+                            <td class="p-4 text-xs font-bold text-gray-500 uppercase">${data.subject} <br> <span class="text-blue-500">${data.topic}</span></td>
+                            <td class="p-4 text-center"><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-black text-sm">${data.score}</span></td>
+                            <td class="p-4 text-center font-bold text-gray-500">${data.avgTime}s</td>
+                            <td class="p-4 text-[10px] text-gray-400 font-bold">${new Date(data.date).toLocaleString()}</td>
+                        </tr>`;
+                });
+            } catch (e) { spinner.innerText = "Error: Check Console!"; }
+        }
+
+        window.exportToExcel = () => {
+            if(!window.resultsData.length) return alert("No data!");
+            const ws = XLSX.utils.json_to_sheet(window.resultsData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Results");
+            XLSX.writeFile(wb, "TestAdda_Report.xlsx");
+        };
+    </script>
+</body>
+</html>
